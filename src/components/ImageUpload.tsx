@@ -1,8 +1,9 @@
 
 import React, { useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Upload } from 'lucide-react';
+import { Upload, X } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { wallpaperService } from '@/services/wallpaperService';
 
 interface ImageUploadProps {
   onImageSelect: (imageUrl: string) => void;
@@ -37,14 +38,15 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ onImageSelect, currentImage }
       return;
     }
 
-    // Convert to base64 and store in localStorage
+    // Convert to base64 and store permanently
     const reader = new FileReader();
     reader.onload = (e) => {
       const result = e.target?.result as string;
+      wallpaperService.setCustomWallpaper(result);
       onImageSelect(result);
       toast({
-        title: "Background updated",
-        description: "Wallpaper has been successfully updated",
+        title: "Wallpaper saved",
+        description: "Custom wallpaper has been permanently saved",
       });
     };
     reader.readAsDataURL(file);
@@ -53,6 +55,17 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ onImageSelect, currentImage }
   const handleButtonClick = () => {
     fileInputRef.current?.click();
   };
+
+  const handleClearWallpaper = () => {
+    wallpaperService.clearCustomWallpaper();
+    onImageSelect('/bg-mountains.jpg');
+    toast({
+      title: "Wallpaper reset",
+      description: "Wallpaper has been reset to default",
+    });
+  };
+
+  const wallpaperConfig = wallpaperService.getWallpaper();
 
   return (
     <div className="space-y-2">
@@ -65,13 +78,20 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ onImageSelect, currentImage }
       />
       <Button onClick={handleButtonClick} className="w-full">
         <Upload size={16} className="mr-2" />
-        Upload Wallpaper
+        Upload Custom Wallpaper
       </Button>
-      {currentImage && (
-        <div className="text-xs text-muted-foreground">
-          Current wallpaper: Custom uploaded image
-        </div>
+      {wallpaperConfig.isCustom && (
+        <Button onClick={handleClearWallpaper} variant="outline" className="w-full">
+          <X size={16} className="mr-2" />
+          Reset to Default
+        </Button>
       )}
+      <div className="text-xs text-muted-foreground">
+        {wallpaperConfig.isCustom 
+          ? `Custom wallpaper uploaded: ${wallpaperConfig.uploadedAt ? new Date(wallpaperConfig.uploadedAt).toLocaleDateString() : 'Unknown'}`
+          : 'Using default wallpaper'
+        }
+      </div>
     </div>
   );
 };

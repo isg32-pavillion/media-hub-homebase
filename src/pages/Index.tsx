@@ -5,22 +5,21 @@ import HomePage from '@/components/HomePage';
 import Login from '@/components/Login';
 import AdminSettings from '@/components/AdminSettings';
 import { useAuth } from '@/contexts/AuthContext';
+import { wallpaperService } from '@/services/wallpaperService';
 
 const Index = () => {
   const { isAuthenticated, role } = useAuth();
   const [backgroundUrl, setBackgroundUrl] = useState('/bg-mountains.jpg');
 
-  // Load background from localStorage if available
+  // Load wallpaper from persistent storage
   useEffect(() => {
-    const savedBackground = localStorage.getItem('backgroundUrl');
-    if (savedBackground) {
-      setBackgroundUrl(savedBackground);
-    }
+    const wallpaperConfig = wallpaperService.getWallpaper();
+    setBackgroundUrl(wallpaperConfig.url);
   }, []);
 
   const handleChangeBackground = (url: string) => {
     setBackgroundUrl(url);
-    localStorage.setItem('backgroundUrl', url);
+    // The wallpaper service handles persistence internally
   };
 
   // If not authenticated, show login page

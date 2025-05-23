@@ -2,6 +2,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import * as Icons from 'lucide-react';
+import { LucideIcon } from 'lucide-react';
 
 interface AppIconProps {
   name: string;
@@ -17,7 +18,7 @@ const AppIcon: React.FC<AppIconProps> = ({ name, iconName, url, className }) => 
     }
   };
 
-  const IconComponent = Icons[iconName as keyof typeof Icons] || Icons.Square;
+  const IconComponent = (Icons[iconName as keyof typeof Icons] as LucideIcon) || Icons.Square;
 
   return (
     <div 

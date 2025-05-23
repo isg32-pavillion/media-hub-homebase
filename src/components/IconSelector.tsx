@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import * as Icons from 'lucide-react';
+import { LucideIcon } from 'lucide-react';
 
 interface IconSelectorProps {
   currentIcon: string;
@@ -31,7 +32,7 @@ const IconSelector: React.FC<IconSelectorProps> = ({ currentIcon, onIconSelect, 
     setOpen(false);
   };
 
-  const CurrentIcon = Icons[currentIcon as keyof typeof Icons] || Icons.Square;
+  const CurrentIcon = (Icons[currentIcon as keyof typeof Icons] as LucideIcon) || Icons.Square;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -56,7 +57,7 @@ const IconSelector: React.FC<IconSelectorProps> = ({ currentIcon, onIconSelect, 
           />
           <div className="grid grid-cols-6 gap-2 max-h-64 overflow-y-auto">
             {filteredIcons.map((iconName) => {
-              const IconComponent = Icons[iconName as keyof typeof Icons];
+              const IconComponent = Icons[iconName as keyof typeof Icons] as LucideIcon;
               if (!IconComponent) return null;
               
               return (

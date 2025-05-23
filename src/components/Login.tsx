@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 
 const Login: React.FC = () => {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
@@ -19,12 +19,12 @@ const Login: React.FC = () => {
     setIsLoading(true);
     
     try {
-      const success = await login(email, password);
+      const success = await login(username, password);
       
       if (!success) {
         toast({
           title: "Authentication failed",
-          description: "Invalid email or password",
+          description: "Invalid username or password",
           variant: "destructive",
         });
       } else {
@@ -54,13 +54,13 @@ const Login: React.FC = () => {
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="username">Username</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="admin@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="username"
+                type="text"
+                placeholder="admin"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 required
                 className="bg-background/50"
               />
@@ -78,9 +78,9 @@ const Login: React.FC = () => {
               />
             </div>
             <div className="text-xs text-muted-foreground">
-              <p>Demo credentials:</p>
-              <p>Admin: admin@example.com / admin</p>
-              <p>User: user@example.com / user</p>
+              <p>Default credentials:</p>
+              <p>Admin: admin / admin123</p>
+              <p>User: user / user123</p>
             </div>
           </CardContent>
           <CardFooter>

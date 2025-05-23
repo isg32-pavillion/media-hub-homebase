@@ -1,12 +1,13 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { credentialsService } from '@/services/credentialsService';
 
 type Role = 'admin' | 'user' | null;
 
 interface AuthContextType {
   isAuthenticated: boolean;
   role: Role;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
 }
 
@@ -28,9 +29,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [role, setRole] = useState<Role>(null);
 
-  // In a real app, check if user is authenticated on page load
   useEffect(() => {
-    const storedAuth = localStorage.getItem('auth');
+    const storedAuth = localStorage.getItem('auth_session');
     if (storedAuth) {
       const { authenticated, userRole } = JSON.parse(storedAuth);
       setIsAuthenticated(authenticated);
@@ -38,18 +38,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
-  // Mock login function - would be replaced with real authentication
-  const login = async (email: string, password: string): Promise<boolean> => {
-    // For demo purposes only - would be replaced with real auth
-    if (email === 'admin@example.com' && password === 'admin') {
+  const login = async (username: string, password: string): Promise<boolean> => {
+    const result = credentialsService.authenticate(username, password);
+    if (result.success && result.role) {
       setIsAuthenticated(true);
-      setRole('admin');
-      localStorage.setItem('auth', JSON.stringify({ authenticated: true, userRole: 'admin' }));
-      return true;
-    } else if (email === 'user@example.com' && password === 'user') {
-      setIsAuthenticated(true);
-      setRole('user');
-      localStorage.setItem('auth', JSON.stringify({ authenticated: true, userRole: 'user' }));
+      setRole(result.role);
+      localStorage.setItem('auth_session', JSON.stringify({ 
+        authenticated: true, 
+        userRole: result.role 
+      }));
       return true;
     }
     return false;
@@ -58,7 +55,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = () => {
     setIsAuthenticated(false);
     setRole(null);
-    localStorage.removeItem('auth');
+    localStorage.removeItem('auth_session');
   };
 
   return (

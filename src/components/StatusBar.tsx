@@ -10,27 +10,27 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import { systemStatsService, SystemStats } from '@/services/systemStats';
+import { useAuth } from '@/contexts/AuthContext';
 
 const StatusBar = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [cpuUsage, setCpuUsage] = useState(Math.floor(Math.random() * 60) + 10);
-  const [ramUsage, setRamUsage] = useState(Math.floor(Math.random() * 50) + 20);
+  const [stats, setStats] = useState<SystemStats>({ cpuUsage: 0, ramUsage: 0, timestamp: Date.now() });
+  const { logout } = useAuth();
   
   useEffect(() => {
+    // Start system monitoring
+    systemStatsService.startMonitoring(2000);
+    
     const timer = setInterval(() => {
       setCurrentTime(new Date());
-      // In a real scenario, we would fetch real CPU and RAM usage data
-      setCpuUsage((prev) => {
-        const newValue = prev + (Math.random() * 10 - 5);
-        return Math.min(Math.max(newValue, 5), 95);
-      });
-      setRamUsage((prev) => {
-        const newValue = prev + (Math.random() * 8 - 4);
-        return Math.min(Math.max(newValue, 10), 90);
-      });
+      setStats(systemStatsService.getCurrentStats());
     }, 1000);
     
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+      systemStatsService.stopMonitoring();
+    };
   }, []);
   
   const formatTime = (date: Date) => {
@@ -45,17 +45,21 @@ const StatusBar = () => {
     // This would be handled by the server to shut down the host computer
     alert("Power off command would be sent to server");
   };
+
+  const handleLogout = () => {
+    logout();
+  };
   
   return (
     <div className="h-12 px-4 py-2 flex items-center justify-between border-b border-border/40 bg-black/30 backdrop-blur-md">
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-1 text-xs">
           <Cpu size={14} className="text-accent animate-pulse-slow" />
-          <span>{cpuUsage.toFixed(1)}% </span>
+          <span>{stats.cpuUsage.toFixed(1)}% </span>
         </div>
         <div className="flex items-center gap-1 text-xs">
           <Monitor size={14} className="text-accent animate-pulse-slow" />
-          <span>{ramUsage.toFixed(1)}% </span>
+          <span>{stats.ramUsage.toFixed(1)}% </span>
         </div>
       </div>
       
@@ -74,11 +78,11 @@ const StatusBar = () => {
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40">
+          <DropdownMenuContent align="end" className="w-40 bg-background border-border">
             <DropdownMenuItem>Profile</DropdownMenuItem>
             <DropdownMenuItem>Settings</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Log out</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>Log out</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
         

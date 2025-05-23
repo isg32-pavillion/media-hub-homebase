@@ -6,47 +6,33 @@ export interface WallpaperConfig {
 }
 
 class WallpaperService {
-  private readonly STORAGE_KEY = 'wallpaper_config';
+  private readonly DEFAULT_WALLPAPER = '/assets/wallpaper/default.jpg';
 
   getWallpaper(): WallpaperConfig {
-    const stored = localStorage.getItem(this.STORAGE_KEY);
-    if (stored) {
-      try {
-        return JSON.parse(stored);
-      } catch {
-        // If parsing fails, return default
-      }
-    }
-    
+    // We're now using a static path instead of localStorage
     return {
-      url: '/bg-mountains.jpg',
+      url: '/assets/wallpaper/wallpaper.png',
       isCustom: false
     };
   }
 
   setWallpaper(wallpaperConfig: WallpaperConfig): void {
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(wallpaperConfig));
+    // This would normally require server-side implementation
+    console.log('Wallpaper would be saved to /assets/wallpaper/ on the server');
+    // In a real implementation, you would send a request to the server
+    // to save the wallpaper file to the correct location
   }
 
   setCustomWallpaper(imageDataUrl: string): void {
-    const config: WallpaperConfig = {
-      url: imageDataUrl,
-      isCustom: true,
-      uploadedAt: new Date().toISOString()
-    };
-    this.setWallpaper(config);
+    console.log('Custom wallpaper would be uploaded to the server');
+    // In a real implementation, this would upload the image to the server
+    // and save it as /assets/wallpaper/wallpaper.png
   }
 
-  setDefaultWallpaper(url: string): void {
-    const config: WallpaperConfig = {
-      url,
-      isCustom: false
-    };
-    this.setWallpaper(config);
-  }
-
-  clearCustomWallpaper(): void {
-    this.setDefaultWallpaper('/bg-mountains.jpg');
+  setDefaultWallpaper(): void {
+    console.log('Setting default wallpaper');
+    // In a real implementation, this would copy the default wallpaper
+    // to /assets/wallpaper/wallpaper.png on the server
   }
 }
 

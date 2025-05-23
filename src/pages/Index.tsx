@@ -9,18 +9,13 @@ import { wallpaperService } from '@/services/wallpaperService';
 
 const Index = () => {
   const { isAuthenticated, role } = useAuth();
-  const [backgroundUrl, setBackgroundUrl] = useState('/bg-mountains.jpg');
+  const [backgroundUrl, setBackgroundUrl] = useState('/assets/wallpaper/wallpaper.png');
 
-  // Load wallpaper from persistent storage
+  // Load wallpaper from service
   useEffect(() => {
     const wallpaperConfig = wallpaperService.getWallpaper();
     setBackgroundUrl(wallpaperConfig.url);
   }, []);
-
-  const handleChangeBackground = (url: string) => {
-    setBackgroundUrl(url);
-    // The wallpaper service handles persistence internally
-  };
 
   // If not authenticated, show login page
   if (!isAuthenticated) {
@@ -31,10 +26,7 @@ const Index = () => {
     <div className="flex flex-col h-screen">
       <div className="flex justify-end items-center absolute top-3 right-4 z-10">
         {role === 'admin' && (
-          <AdminSettings 
-            onChangeBackground={handleChangeBackground}
-            currentBackground={backgroundUrl}
-          />
+          <AdminSettings />
         )}
       </div>
       <StatusBar />

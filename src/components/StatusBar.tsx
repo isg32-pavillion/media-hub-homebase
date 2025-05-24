@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Cpu, Clock, PowerOff, Monitor } from 'lucide-react';
+import { Clock, PowerOff } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { 
@@ -10,26 +10,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { systemStatsService, SystemStats } from '@/services/systemStats';
 import { useAuth } from '@/contexts/AuthContext';
 
 const StatusBar = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [stats, setStats] = useState<SystemStats>({ cpuUsage: 0, ramUsage: 0, timestamp: Date.now() });
   const { logout } = useAuth();
   
   useEffect(() => {
-    // Start system monitoring
-    systemStatsService.startMonitoring(2000);
-    
     const timer = setInterval(() => {
       setCurrentTime(new Date());
-      setStats(systemStatsService.getCurrentStats());
     }, 1000);
     
     return () => {
       clearInterval(timer);
-      systemStatsService.stopMonitoring();
     };
   }, []);
   
@@ -53,14 +46,7 @@ const StatusBar = () => {
   return (
     <div className="h-12 px-4 py-2 flex items-center justify-between border-b border-border/40 bg-black/30 backdrop-blur-md">
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-1 text-xs">
-          <Cpu size={14} className="text-accent animate-pulse-slow" />
-          <span>{stats.cpuUsage.toFixed(1)}% </span>
-        </div>
-        <div className="flex items-center gap-1 text-xs">
-          <Monitor size={14} className="text-accent animate-pulse-slow" />
-          <span>{stats.ramUsage.toFixed(1)}% </span>
-        </div>
+        {/* System stats removed */}
       </div>
       
       <div className="flex items-center gap-1 text-sm">

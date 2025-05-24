@@ -6,11 +6,11 @@ A beautiful, responsive dashboard for managing your self-hosted media server wit
 ## Features
 
 - 🖥️ Real-time system monitoring (CPU, RAM usage)
-- 🎨 Customizable wallpapers (admin only)
 - 🔗 Configurable app shortcuts with custom icons
 - 👤 User authentication with admin privileges
 - 📱 Responsive design for all devices
 - 🔒 File-based authentication system
+- 📡 RSS feed management (admin only)
 
 ## Project URL
 
@@ -68,140 +68,7 @@ EOF
 chmod 600 auth/credentials.json
 ```
 
-### 3. System Monitoring Setup (Real-time Stats)
-
-The application uses browser APIs for basic monitoring. For enhanced server monitoring, you can set up additional endpoints:
-
-#### Option A: Simple HTTP Endpoints (Recommended)
-
-Create monitoring scripts that expose system stats via HTTP:
-
-```bash
-# Create monitoring directory
-sudo mkdir -p /opt/media-hub-monitoring
-cd /opt/media-hub-monitoring
-
-# Create system stats script
-sudo tee system-stats.py << 'EOF'
-#!/usr/bin/env python3
-import json
-import psutil
-import time
-from http.server import HTTPServer, SimpleHTTPRequestHandler
-import urllib.parse
-
-class StatsHandler(SimpleHTTPRequestHandler):
-    def do_GET(self):
-        if self.path == '/stats':
-            stats = {
-                'cpu': psutil.cpu_percent(interval=1),
-                'memory': psutil.virtual_memory().percent,
-                'disk': psutil.disk_usage('/').percent,
-                'uptime': time.time() - psutil.boot_time(),
-                'timestamp': time.time()
-            }
-            
-            self.send_response(200)
-            self.send_header('Content-type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
-            self.end_headers()
-            self.wfile.write(json.dumps(stats).encode())
-        else:
-            self.send_response(404)
-            self.end_headers()
-
-if __name__ == '__main__':
-    server = HTTPServer(('localhost', 3001), StatsHandler)
-    print("System stats server running on http://localhost:3001/stats")
-    server.serve_forever()
-EOF
-
-# Make executable
-sudo chmod +x system-stats.py
-
-# Install required Python packages
-sudo pip3 install psutil
-
-# Create systemd service
-sudo tee /etc/systemd/system/media-hub-stats.service << 'EOF'
-[Unit]
-Description=Media Hub System Stats Service
-After=network.target
-
-[Service]
-Type=simple
-User=root
-WorkingDirectory=/opt/media-hub-monitoring
-ExecStart=/usr/bin/python3 /opt/media-hub-monitoring/system-stats.py
-Restart=always
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# Enable and start the service
-sudo systemctl daemon-reload
-sudo systemctl enable media-hub-stats.service
-sudo systemctl start media-hub-stats.service
-
-# Check service status
-sudo systemctl status media-hub-stats.service
-```
-
-#### Option B: File-based Monitoring
-
-```bash
-# Create stats directory
-sudo mkdir -p /var/www/media-hub/stats
-sudo chown www-data:www-data /var/www/media-hub/stats
-
-# Create stats update script
-sudo tee /usr/local/bin/update-system-stats.sh << 'EOF'
-#!/bin/bash
-
-STATS_FILE="/var/www/media-hub/stats/system.json"
-
-# Get system stats
-CPU_USAGE=$(top -bn1 | grep "Cpu(s)" | awk '{print $2}' | cut -d'%' -f1)
-MEMORY_USAGE=$(free | grep Mem | awk '{printf "%.1f", $3/$2 * 100.0}')
-DISK_USAGE=$(df -h / | awk 'NR==2{print $5}' | cut -d'%' -f1)
-UPTIME=$(uptime -p)
-TIMESTAMP=$(date +%s)
-
-# Create JSON
-cat > "$STATS_FILE" << EOF
-{
-  "cpu": $CPU_USAGE,
-  "memory": $MEMORY_USAGE,
-  "disk": $DISK_USAGE,
-  "uptime": "$UPTIME",
-  "timestamp": $TIMESTAMP
-}
-EOF
-
-chmod 644 "$STATS_FILE"
-EOF
-
-# Make executable
-sudo chmod +x /usr/local/bin/update-system-stats.sh
-
-# Add to crontab (updates every 5 seconds)
-echo "* * * * * /usr/local/bin/update-system-stats.sh" | sudo crontab -
-echo "* * * * * sleep 5; /usr/local/bin/update-system-stats.sh" | sudo crontab -
-echo "* * * * * sleep 10; /usr/local/bin/update-system-stats.sh" | sudo crontab -
-echo "* * * * * sleep 15; /usr/local/bin/update-system-stats.sh" | sudo crontab -
-echo "* * * * * sleep 20; /usr/local/bin/update-system-stats.sh" | sudo crontab -
-echo "* * * * * sleep 25; /usr/local/bin/update-system-stats.sh" | sudo crontab -
-echo "* * * * * sleep 30; /usr/local/bin/update-system-stats.sh" | sudo crontab -
-echo "* * * * * sleep 35; /usr/local/bin/update-system-stats.sh" | sudo crontab -
-echo "* * * * * sleep 40; /usr/local/bin/update-system-stats.sh" | sudo crontab -
-echo "* * * * * sleep 45; /usr/local/bin/update-system-stats.sh" | sudo crontab -
-echo "* * * * * sleep 50; /usr/local/bin/update-system-stats.sh" | sudo crontab -
-echo "* * * * * sleep 55; /usr/local/bin/update-system-stats.sh" | sudo crontab -
-```
-
-### 4. Production Deployment with Nginx
+### 3. Production Deployment with Nginx
 
 ```bash
 # Build the application
@@ -210,6 +77,9 @@ npm run build
 # Create web directory
 sudo mkdir -p /var/www/media-hub
 sudo cp -r dist/* /var/www/media-hub/
+
+# Add wallpaper
+sudo cp public/wallpaper.jpg /var/www/media-hub/
 sudo chown -R www-data:www-data /var/www/media-hub
 
 # Create Nginx configuration
@@ -224,13 +94,6 @@ server {
     location / {
         try_files $uri $uri/ /index.html;
         add_header Cache-Control "no-cache, no-store, must-revalidate";
-    }
-
-    # Proxy for system stats (if using Option A)
-    location /api/stats {
-        proxy_pass http://localhost:3001/stats;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
     }
 
     # Serve credentials file (restrict access)
@@ -252,7 +115,219 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-### 5. Power Management Setup
+### 4. Running as System Service on Startup
+
+#### Option A: Systemd Service (Recommended for Production)
+
+Create a systemd service to run the application on startup:
+
+```bash
+# Create service file
+sudo tee /etc/systemd/system/media-hub.service << 'EOF'
+[Unit]
+Description=Media Hub Dashboard
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/var/www/media-hub
+ExecStart=/usr/bin/nginx -g "daemon off;"
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=5
+PrivateTmp=true
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Enable and start the service
+sudo systemctl daemon-reload
+sudo systemctl enable media-hub.service
+sudo systemctl start media-hub.service
+
+# Check service status
+sudo systemctl status media-hub.service
+```
+
+#### Option B: Development Mode Service
+
+For development or testing, create a service that runs the dev server:
+
+```bash
+# Create development service
+sudo tee /etc/systemd/system/media-hub-dev.service << 'EOF'
+[Unit]
+Description=Media Hub Development Server
+After=network.target
+
+[Service]
+Type=simple
+User=yourusername
+WorkingDirectory=/path/to/your/project
+Environment=NODE_ENV=development
+ExecStart=/usr/bin/npm run dev
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Replace 'yourusername' and '/path/to/your/project' with actual values
+# Enable and start
+sudo systemctl daemon-reload
+sudo systemctl enable media-hub-dev.service
+sudo systemctl start media-hub-dev.service
+```
+
+#### Option C: PM2 Process Manager
+
+Install PM2 for Node.js process management:
+
+```bash
+# Install PM2 globally
+sudo npm install -g pm2
+
+# Navigate to your project directory
+cd /path/to/your/project
+
+# Build the project
+npm run build
+
+# Create PM2 ecosystem file
+cat > ecosystem.config.js << 'EOF'
+module.exports = {
+  apps: [{
+    name: 'media-hub',
+    script: 'npm',
+    args: 'run preview',
+    cwd: '/path/to/your/project',
+    instances: 1,
+    autorestart: true,
+    watch: false,
+    max_memory_restart: '1G',
+    env: {
+      NODE_ENV: 'production',
+      PORT: 4173
+    }
+  }]
+};
+EOF
+
+# Start with PM2
+pm2 start ecosystem.config.js
+
+# Save PM2 configuration
+pm2 save
+
+# Setup PM2 to start on boot
+pm2 startup
+
+# Follow the instructions provided by the command above
+```
+
+#### Option D: Docker Service
+
+Create a Docker setup for containerized deployment:
+
+```bash
+# Create Dockerfile
+cat > Dockerfile << 'EOF'
+FROM node:18-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci --only=production
+
+COPY . .
+RUN npm run build
+
+EXPOSE 4173
+
+CMD ["npm", "run", "preview"]
+EOF
+
+# Create docker-compose.yml
+cat > docker-compose.yml << 'EOF'
+version: '3.8'
+
+services:
+  media-hub:
+    build: .
+    ports:
+      - "4173:4173"
+    volumes:
+      - ./auth:/app/auth
+      - ./public/wallpaper.jpg:/app/dist/wallpaper.jpg
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - media-hub
+    restart: unless-stopped
+EOF
+
+# Build and start
+docker-compose up -d
+
+# Enable auto-start on boot
+sudo systemctl enable docker
+```
+
+### 5. Service Management Commands
+
+#### Systemd Services
+```bash
+# Start service
+sudo systemctl start media-hub
+
+# Stop service
+sudo systemctl stop media-hub
+
+# Restart service
+sudo systemctl restart media-hub
+
+# Check status
+sudo systemctl status media-hub
+
+# View logs
+sudo journalctl -u media-hub -f
+
+# Disable auto-start
+sudo systemctl disable media-hub
+```
+
+#### PM2 Commands
+```bash
+# List running processes
+pm2 list
+
+# Restart application
+pm2 restart media-hub
+
+# Stop application
+pm2 stop media-hub
+
+# View logs
+pm2 logs media-hub
+
+# Monitor processes
+pm2 monit
+```
+
+### 6. Power Management Setup
 
 For shutdown functionality, create a secure shutdown script:
 
@@ -281,70 +356,6 @@ sudo chmod +x /usr/local/bin/media-hub-shutdown.sh
 echo "www-data ALL=(ALL) NOPASSWD: /usr/local/bin/media-hub-shutdown.sh" | sudo tee -a /etc/sudoers
 ```
 
-### 6. File Management Setup
-
-For SFTP web interface, you can integrate existing solutions:
-
-```bash
-# Option 1: Use filebrowser (recommended)
-curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash
-
-# Create filebrowser config
-cat > filebrowser-config.json << 'EOF'
-{
-  "port": 8800,
-  "baseURL": "",
-  "address": "0.0.0.0",
-  "log": "stdout",
-  "database": "/etc/filebrowser.db",
-  "root": "/home"
-}
-EOF
-
-# Start filebrowser
-sudo filebrowser -c filebrowser-config.json
-```
-
-### 7. Service Management
-
-Create a comprehensive service manager:
-
-```bash
-# Create service control script
-sudo tee /usr/local/bin/media-hub-services.sh << 'EOF'
-#!/bin/bash
-
-case "$1" in
-    start)
-        sudo systemctl start media-hub-stats
-        sudo systemctl start nginx
-        echo "Media Hub services started"
-        ;;
-    stop)
-        sudo systemctl stop media-hub-stats
-        sudo systemctl stop nginx
-        echo "Media Hub services stopped"
-        ;;
-    restart)
-        sudo systemctl restart media-hub-stats
-        sudo systemctl restart nginx
-        echo "Media Hub services restarted"
-        ;;
-    status)
-        echo "=== Media Hub Service Status ==="
-        sudo systemctl status media-hub-stats --no-pager
-        sudo systemctl status nginx --no-pager
-        ;;
-    *)
-        echo "Usage: $0 {start|stop|restart|status}"
-        exit 1
-        ;;
-esac
-EOF
-
-sudo chmod +x /usr/local/bin/media-hub-services.sh
-```
-
 ## Configuration
 
 ### Default Apps Configuration
@@ -362,6 +373,13 @@ The dashboard comes with these default apps:
 3. Go to "Apps" tab
 4. Add/edit/remove applications
 
+### RSS Feed Management
+
+1. Login as admin
+2. Hover over the RSS dock at the bottom
+3. Use the + button to add new RSS feeds
+4. Remove feeds with the X button
+
 ### Changing Credentials
 
 Edit the credentials file:
@@ -370,20 +388,13 @@ Edit the credentials file:
 nano auth/credentials.json
 ```
 
-### Custom Wallpapers
-
-1. Login as admin
-2. Click settings gear → Wallpaper tab
-3. Upload image (max 5MB)
-4. Wallpaper is permanently saved in browser storage
-
 ## Troubleshooting
 
 ### Common Issues
 
-1. **System stats not updating**: Check if monitoring service is running
+1. **Service not starting**: Check service logs
    ```bash
-   sudo systemctl status media-hub-stats
+   sudo journalctl -u media-hub -f
    ```
 
 2. **Authentication not working**: Verify credentials file permissions
@@ -391,9 +402,12 @@ nano auth/credentials.json
    ls -la auth/credentials.json
    ```
 
-3. **Wallpaper not persisting**: Clear browser storage and re-upload
+3. **Apps not opening**: Check if target services are running on specified ports
 
-4. **Apps not opening**: Check if target services are running on specified ports
+4. **Port already in use**: Change the port in your configuration
+   ```bash
+   sudo netstat -tulpn | grep :80
+   ```
 
 ### Logs
 
@@ -401,11 +415,11 @@ nano auth/credentials.json
 # Nginx logs
 sudo tail -f /var/log/nginx/error.log
 
-# System stats service logs
-sudo journalctl -u media-hub-stats -f
-
 # System logs
 sudo tail -f /var/log/syslog
+
+# Application logs (if using PM2)
+pm2 logs media-hub
 ```
 
 ## Security Considerations

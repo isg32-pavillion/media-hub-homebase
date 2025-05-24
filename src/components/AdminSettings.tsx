@@ -6,17 +6,11 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { Settings, Plus, Trash2, Edit } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import ImageUpload from './ImageUpload';
 import IconSelector from './IconSelector';
 import { appConfigService, AppConfig } from '@/services/appConfigService';
 import { credentialsService } from '@/services/credentialsService';
 
-interface AdminSettingsProps {
-  onChangeBackground: (url: string) => void;
-  currentBackground: string;
-}
-
-const AdminSettings: React.FC<AdminSettingsProps> = ({ onChangeBackground, currentBackground }) => {
+const AdminSettings: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [apps, setApps] = useState<AppConfig[]>([]);
   const [editingApp, setEditingApp] = useState<AppConfig | null>(null);
@@ -110,10 +104,6 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ onChangeBackground, curre
     });
   };
 
-  const handleImageUpload = (imageUrl: string) => {
-    onChangeBackground(imageUrl);
-  };
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -126,22 +116,11 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ onChangeBackground, curre
           <DialogTitle>Admin Settings</DialogTitle>
         </DialogHeader>
         
-        <Tabs defaultValue="wallpaper" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="wallpaper">Wallpaper</TabsTrigger>
+        <Tabs defaultValue="apps" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="apps">Apps</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
           </TabsList>
-          
-          <TabsContent value="wallpaper" className="space-y-4">
-            <div className="space-y-2">
-              <Label>Upload Custom Wallpaper</Label>
-              <ImageUpload 
-                onImageSelect={handleImageUpload}
-                currentImage={currentBackground}
-              />
-            </div>
-          </TabsContent>
           
           <TabsContent value="apps" className="space-y-4">
             <div className="space-y-4">

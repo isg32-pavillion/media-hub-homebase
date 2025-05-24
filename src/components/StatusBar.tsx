@@ -55,16 +55,16 @@ const StatusBar = () => {
         <span className="text-xs text-muted-foreground ml-2">{formatDate(currentTime)}</span>
       </div>
       
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full">
+            <Button variant="ghost" size="icon" className="rounded-full h-8 w-8">
               <Avatar className="h-7 w-7">
                 <AvatarFallback className="bg-accent text-xs">AD</AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40 bg-background border-border">
+          <DropdownMenuContent align="end" className="w-40 bg-background border-border z-50">
             <DropdownMenuItem>Profile</DropdownMenuItem>
             <DropdownMenuItem>Settings</DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -75,10 +75,10 @@ const StatusBar = () => {
         <Button 
           variant="ghost" 
           size="icon" 
-          className="rounded-full hover:bg-destructive/20 hover:text-destructive" 
+          className="rounded-full hover:bg-destructive/20 hover:text-destructive h-8 w-8" 
           onClick={handlePowerOff}
         >
-          <PowerOff size={18} />
+          <PowerOff size={16} />
         </Button>
       </div>
     </div>
